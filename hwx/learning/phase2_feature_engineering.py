@@ -16,7 +16,7 @@ def load_data():
     """加载数据"""
     print("📊 正在加载数据...")
     try:
-        train_labels = pd.read_csv('../data/train_labels.csv')
+        train_labels = pd.read_csv('../../data/train_labels.csv')
         print(f"✅ 成功加载训练标签数据，形状: {train_labels.shape}")
         return train_labels
     except Exception as e:
@@ -172,8 +172,8 @@ def analyze_feature_correlations(df, target_cols, max_features=20):
         plt.show()
         
         # 保存图表
-        plt.savefig('feature_correlations.png', dpi=300, bbox_inches='tight')
-        print("💾 相关性热力图已保存为 'feature_correlations.png'")
+        plt.savefig('image/feature_correlations.png', dpi=300, bbox_inches='tight')
+        print("💾 相关性热力图已保存为 'image/feature_correlations.png'")
         
         # 分析目标变量的相关性
         print("\n🎯 目标变量相关性分析:")
@@ -253,7 +253,7 @@ def main():
     evaluate_feature_quality(df, target_columns)
     
     # 保存处理后的数据
-    output_file = 'train_labels_with_features.csv'
+    output_file = 'image/train_labels_with_features.csv'
     df.to_csv(output_file, index=False)
     print(f"\n💾 处理后的数据已保存为 '{output_file}'")
     

@@ -110,8 +110,8 @@ def analyze_target_variables(train_labels):
         plt.show()
         
         # 保存图表
-        plt.savefig('target_variables_distribution.png', dpi=300, bbox_inches='tight')
-        print("💾 图表已保存为 'target_variables_distribution.png'")
+        plt.savefig('image/target_variables_distribution.png', dpi=300, bbox_inches='tight')
+        print("💾 图表已保存为 'image/target_variables_distribution.png'")
         
     except Exception as e:
         print(f"❌ 绘图错误：{e}")

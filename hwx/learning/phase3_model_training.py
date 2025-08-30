@@ -24,14 +24,14 @@ def load_data_with_features():
     print("📊 正在加载带有特征的数据...")
     
     # 尝试加载已经处理过的数据
-    feature_file = 'train_labels_with_features.csv'
+    feature_file = 'image/train_labels_with_features.csv'
     if os.path.exists(feature_file):
         print(f"✅ 找到特征文件: {feature_file}")
         df = pd.read_csv(feature_file)
     else:
         print("⚠️ 未找到特征文件，尝试加载原始数据...")
         try:
-            df = pd.read_csv('../data/train_labels.csv')
+            df = pd.read_csv('../../data/train_labels.csv')
             print("✅ 成功加载原始数据")
         except Exception as e:
             print(f"❌ 加载数据失败: {e}")
@@ -215,61 +215,111 @@ def compare_models(single_results, multi_results):
     print("🔍 模型比较分析")
     print("=" * 50)
     
-    # 选择第一个目标变量进行比较
-    first_target = list(single_results.keys())[0]
-    
-    print(f"📊 比较 {first_target} 的预测性能:")
-    print(f"单目标模型 RMSE: {single_results[first_target]['rmse']:.6f}")
-    print(f"多目标模型 RMSE: {multi_results[first_target]['rmse']:.6f}")
-    
-    if single_results[first_target]['rmse'] < multi_results[first_target]['rmse']:
-        print("🏆 单目标模型表现更好")
-    else:
-        print("🏆 多目标模型表现更好")
-    
-    # 可视化比较
     try:
-        targets = list(single_results.keys())[:5]  # 只比较前5个
-        
-        single_rmse = [single_results[target]['rmse'] for target in targets]
-        multi_rmse = [multi_results[target]['rmse'] for target in targets]
-        
-        x = np.arange(len(targets))
-        width = 0.35
-        
-        fig, ax = plt.subplots(figsize=(12, 6))
-        rects1 = ax.bar(x - width/2, single_rmse, width, label='单目标模型', alpha=0.8)
-        rects2 = ax.bar(x + width/2, multi_rmse, width, label='多目标模型', alpha=0.8)
-        
-        ax.set_xlabel('目标变量')
-        ax.set_ylabel('RMSE')
-        ax.set_title('单目标 vs 多目标模型性能比较')
-        ax.set_xticks(x)
-        ax.set_xticklabels(targets, rotation=45)
-        ax.legend()
-        
-        # 添加数值标签
-        def autolabel(rects):
-            for rect in rects:
-                height = rect.get_height()
-                ax.annotate(f'{height:.4f}',
-                           xy=(rect.get_x() + rect.get_width() / 2, height),
-                           xytext=(0, 3),
-                           textcoords="offset points",
-                           ha='center', va='bottom')
-        
-        autolabel(rects1)
-        autolabel(rects2)
-        
-        plt.tight_layout()
-        plt.show()
-        
-        # 保存图表
-        plt.savefig('model_comparison.png', dpi=300, bbox_inches='tight')
-        print("💾 模型比较图表已保存为 'model_comparison.png'")
-        
+        # 检查数据结构并安全地提取数据
+        if isinstance(single_results, dict) and len(single_results) > 0:
+            first_target = list(single_results.keys())[0]
+            
+            # 安全地提取RMSE值
+            if isinstance(single_results[first_target], dict) and 'rmse' in single_results[first_target]:
+                single_rmse = single_results[first_target]['rmse']
+            else:
+                single_rmse = single_results[first_target] if isinstance(single_results[first_target], (int, float)) else 0
+                
+            if isinstance(multi_results, dict) and len(multi_results) > 0:
+                if isinstance(multi_results[first_target], dict) and 'rmse' in multi_results[first_target]:
+                    multi_rmse = multi_results[first_target]['rmse']
+                else:
+                    multi_rmse = multi_results[first_target] if isinstance(multi_results[first_target], (int, float)) else 0
+            else:
+                multi_rmse = multi_results if isinstance(multi_results, (int, float)) else 0
+            
+            print(f"📊 比较 {first_target} 的预测性能:")
+            print(f"单目标模型 RMSE: {single_rmse:.6f}")
+            print(f"多目标模型 RMSE: {multi_rmse:.6f}")
+            
+            if single_rmse > 0 and multi_rmse > 0:
+                if single_rmse < multi_rmse:
+                    print("🏆 单目标模型表现更好")
+                else:
+                    print("🏆 多目标模型表现更好")
+                    
+                # 计算性能提升
+                improvement = ((single_rmse - multi_rmse) / single_rmse) * 100
+                print(f"性能提升: {improvement:.2f}%")
+            else:
+                print("⚠️  无法比较模型性能（RMSE值异常）")
+        else:
+            print("⚠️  单目标模型结果为空或格式异常")
+            return
+            
+        # 可视化比较
+        try:
+            # 准备比较数据
+            if isinstance(single_results, dict) and isinstance(multi_results, dict):
+                targets = list(single_results.keys())[:5]  # 只比较前5个
+                
+                single_rmse_list = []
+                multi_rmse_list = []
+                
+                for target in targets:
+                    # 安全地提取RMSE值
+                    if isinstance(single_results[target], dict) and 'rmse' in single_results[target]:
+                        single_rmse_list.append(single_results[target]['rmse'])
+                    else:
+                        single_rmse_list.append(single_results[target] if isinstance(single_results[target], (int, float)) else 0)
+                        
+                    if isinstance(multi_results[target], dict) and 'rmse' in multi_results[target]:
+                        multi_rmse_list.append(multi_results[target]['rmse'])
+                    else:
+                        multi_rmse_list.append(multi_results[target] if isinstance(multi_results[target], (int, float)) else 0)
+            else:
+                # 如果结果不是字典格式，使用简单的比较
+                targets = ['模型1', '模型2']
+                single_rmse_list = [single_rmse]
+                multi_rmse_list = [multi_rmse]
+            
+            # 创建比较图表
+            x = np.arange(len(targets))
+            width = 0.35
+            
+            fig, ax = plt.subplots(figsize=(12, 6))
+            rects1 = ax.bar(x - width/2, single_rmse_list, width, label='单目标模型', alpha=0.8, color='skyblue')
+            rects2 = ax.bar(x + width/2, multi_rmse_list, width, label='多目标模型', alpha=0.8, color='lightcoral')
+            
+            ax.set_xlabel('目标变量')
+            ax.set_ylabel('RMSE')
+            ax.set_title('单目标 vs 多目标模型性能比较')
+            ax.set_xticks(x)
+            ax.set_xticklabels(targets, rotation=45)
+            ax.legend()
+            
+            # 添加数值标签
+            def autolabel(rects):
+                for rect in rects:
+                    height = rect.get_height()
+                    ax.annotate(f'{height:.4f}',
+                               xy=(rect.get_x() + rect.get_width() / 2, height),
+                               xytext=(0, 3),
+                               textcoords="offset points",
+                               ha='center', va='bottom')
+            
+            autolabel(rects1)
+            autolabel(rects2)
+            
+            plt.tight_layout()
+            plt.show()
+            
+            # 保存图表
+            plt.savefig('image/model_comparison.png', dpi=300, bbox_inches='tight')
+            print("💾 模型比较图表已保存为 'image/model_comparison.png'")
+            
+        except Exception as e:
+            print(f"❌ 可视化比较失败: {e}")
+            
     except Exception as e:
-        print(f"❌ 可视化比较失败: {e}")
+        print(f"❌ 模型比较分析失败: {e}")
+        print("继续执行其他功能...")
 
 def cross_validation_analysis(X, y, n_splits=5):
     """交叉验证分析"""
@@ -330,8 +380,11 @@ def main():
     # 任务2：多目标预测
     multi_model, multi_results = train_multi_output_model(X, y)
     
-    # 比较模型性能
-    compare_models(single_results, multi_results)
+    # 比较模型性能 - 确保数据结构一致
+    if single_results is not None and multi_results is not None:
+        compare_models(single_results, multi_results)
+    else:
+        print("⚠️  跳过模型比较（模型训练结果为空）")
     
     # 交叉验证分析
     cv_scores = cross_validation_analysis(X, y)
@@ -340,12 +393,12 @@ def main():
     import joblib
     
     # 保存单目标模型
-    joblib.dump(single_model, 'single_target_model.pkl')
-    print("\n💾 单目标模型已保存为 'single_target_model.pkl'")
+    joblib.dump(single_model, 'image/single_target_model.pkl')
+    print("\n💾 单目标模型已保存为 'image/single_target_model.pkl'")
     
     # 保存多目标模型
-    joblib.dump(multi_model, 'multi_target_model.pkl')
-    print("💾 多目标模型已保存为 'multi_target_model.pkl'")
+    joblib.dump(multi_model, 'image/multi_target_model.pkl')
+    print("💾 多目标模型已保存为 'image/multi_target_model.pkl'")
     
     print("\n" + "=" * 60)
     print("🎉 第三阶段学习任务完成！")
